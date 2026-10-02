@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Market &amp; Weather Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f5f7fb; --surface: #ffffff; --surface-2: #f0f3f8;
+      --text: #0f172a; --muted: #64748b; --border: #e2e8f0;
+      --brand: #0b3d91; --brand-2: #1d64d8; --brand-text: #ffffff;
+      --up: #059669; --up-bg: #ecfdf5; --down: #dc2626; --down-bg: #fef2f2;
+      --gold: #b8860b; --shadow: 0 1px 2px rgba(15,23,42,.04), 0 4px 16px rgba(15,23,42,.06);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0b1120; --surface: #111a2e; --surface-2: #17223a;
+        --text: #e2e8f0; --muted: #94a3b8; --border: #1f2c46;
+        --brand: #0a1730; --brand-2: #60a5fa; --brand-text: #e2e8f0;
+        --up: #34d399; --up-bg: rgba(52,211,153,.12); --down: #f87171; --down-bg: rgba(248,113,113,.12);
+        --gold: #fbbf24; --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.25);
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--bg); color: var(--text);
+      font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      font-size: 15px; -webkit-font-smoothing: antialiased;
+    }
+    .num { font-variant-numeric: tabular-nums; }
+
+    /* Top bar */
+    .topbar { background: var(--brand); color: var(--brand-text); border-bottom: 1px solid var(--border); }
+    .topbar-inner {
+      max-width: 1180px; margin: 0 auto; padding: 14px 20px;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.05rem; letter-spacing: .2px; }
+    .brand-mark {
+      width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center;
+      background: rgba(255,255,255,.14); font-size: .95rem;
+    }
+    .topbar-right { display: flex; align-items: center; gap: 16px; font-size: .85rem; opacity: .9; }
+    .live-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #22c55e; margin-right: 6px; box-shadow: 0 0 0 3px rgba(34,197,94,.25); }
+    .btn {
+      font: inherit; font-weight: 500; font-size: .85rem; cursor: pointer;
+      padding: 7px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,.25);
+      background: rgba(255,255,255,.08); color: inherit;
+    }
+    .btn:hover { background: rgba(255,255,255,.16); }
+
+    main { max-width: 1180px; margin: 0 auto; padding: 28px 20px 48px; }
+    .section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 8px 0 14px; }
+    .section-head h2 { margin: 0; font-size: 1.05rem; font-weight: 600; }
+    .section-head p { margin: 2px 0 0; color: var(--muted); font-size: .85rem; }
+    section + section { margin-top: 36px; }
+
+    .card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+      box-shadow: var(--shadow); padding: 20px;
+    }
+    .grid { display: grid; gap: 16px; }
+    .grid-3 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+    .grid-w { grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
+
+    /* Market cards */
+    .m-head { display: flex; justify-content: space-between; align-items: flex-start; }
+    .m-label { font-weight: 600; }
+    .m-symbol { color: var(--muted); font-size: .78rem; margin-top: 2px; }
+    .pill { font-size: .8rem; font-weight: 600; padding: 4px 8px; border-radius: 999px; white-space: nowrap; }
+    .pill.up { color: var(--up); background: var(--up-bg); }
+    .pill.down { color: var(--down); background: var(--down-bg); }
+    .m-price { font-size: 2rem; font-weight: 700; margin: 14px 0 2px; letter-spacing: -.5px; }
+    .m-change { font-size: .88rem; font-weight: 500; }
+    .up-t { color: var(--up); } .down-t { color: var(--down); }
+    .spark { width: 100%; height: 56px; margin: 14px 0 10px; display: block; }
+    .m-foot { display: flex; justify-content: space-between; color: var(--muted); font-size: .78rem; border-top: 1px solid var(--border); padding-top: 10px; }
+    .accent-gold { border-top: 3px solid var(--gold); }
+    .accent-oil { border-top: 3px solid var(--brand-2); }
+
+    /* Weather cards */
+    .w-card { position: relative; }
+    .w-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+    .w-city { font-size: 1.15rem; font-weight: 600; }
+    .w-country { color: var(--muted); font-size: .85rem; margin-top: 2px; }
+    .w-time { text-align: right; }
+    .w-clock { font-size: 1.05rem; font-weight: 600; }
+    .w-tz { color: var(--muted); font-size: .75rem; }
+    .w-main { display: flex; align-items: center; gap: 16px; margin: 18px 0; }
+    .w-icon { font-size: 3.2rem; line-height: 1; }
+    .w-temp { font-size: 2.8rem; font-weight: 700; letter-spacing: -1px; line-height: 1; }
+    .w-desc { font-weight: 500; }
+    .w-hl { color: var(--muted); font-size: .85rem; margin-top: 4px; }
+    .w-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .w-stat { background: var(--surface-2); padding: 10px 12px; }
+    .w-stat .k { color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .5px; }
+    .w-stat .v { font-weight: 600; margin-top: 3px; font-size: .92rem; }
+    .remove {
+      position: absolute; top: 10px; right: 10px; width: 24px; height: 24px; border-radius: 6px;
+      border: none; background: transparent; color: var(--muted); cursor: pointer; font-size: 16px; line-height: 1;
+      opacity: 0; transition: opacity .15s;
+    }
+    .w-card:hover .remove, .remove:focus { opacity: 1; }
+    .remove:hover { background: var(--surface-2); color: var(--text); }
+    .w-card:hover .w-time { margin-right: 26px; }
+
+    .add-form { display: flex; gap: 8px; }
+    .add-form input {
+      font: inherit; font-size: .88rem; padding: 8px 12px; border-radius: 8px; width: 200px;
+      border: 1px solid var(--border); background: var(--surface); color: var(--text);
+    }
+    .add-form input:focus { outline: 2px solid var(--brand-2); outline-offset: -1px; }
+    .add-form button {
+      font: inherit; font-size: .88rem; font-weight: 600; padding: 8px 14px; border-radius: 8px;
+      border: none; background: var(--brand-2); color: #fff; cursor: pointer;
+    }
+    .error { color: var(--down); font-size: .9rem; }
+    .toast { color: var(--down); font-size: .82rem; min-height: 1em; margin-top: -6px; margin-bottom: 8px; }
+
+    .skeleton { background: linear-gradient(90deg, var(--surface-2), var(--border), var(--surface-2)); background-size: 200% 100%; animation: sh 1.2s infinite; border-radius: 6px; }
+    @keyframes sh { to { background-position: -200% 0; } }
+
+    footer { max-width: 1180px; margin: 0 auto; padding: 0 20px 32px; color: var(--muted); font-size: .78rem; }
+
+    @media (max-width: 480px) {
+      .grid-w, .grid-3 { grid-template-columns: 1fr; }
+      .add-form { width: 100%; } .add-form input { flex: 1; width: auto; }
+      .topbar-right .updated { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="brand"><div class="brand-mark">◆</div>Market &amp; Weather</div>
+      <div class="topbar-right">
+        <span><span class="live-dot"></span>Live</span>
+        <span class="updated" id="refreshed">Loading…</span>
+        <button class="btn" id="refresh-btn">↻ Refresh</button>
+      </div>
+    </div>
+  </div>
+
+  <main>
+    <section>
+      <div class="section-head">
+        <div>
+          <h2>Commodities</h2>
+          <p>Front-month futures · 1-month trend</p>
+        </div>
+      </div>
+      <div class="grid grid-3" id="prices">
+        <div class="card"><div class="skeleton" style="height:150px"></div></div>
+        <div class="card"><div class="skeleton" style="height:150px"></div></div>
+        <div class="card"><div class="skeleton" style="height:150px"></div></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <div>
+          <h2>Weather</h2>
+          <p>Current conditions by city</p>
+        </div>
+        <form class="add-form" id="add-form">
+          <input id="city-input" placeholder="Add a city…" aria-label="Add a city">
+          <button type="submit">Add</button>
+        </form>
+      </div>
+      <div class="toast" id="toast"></div>
+      <div class="grid grid-w" id="weather"></div>
+    </section>
+  </main>
+
+  <footer>
+    Weather data: Open-Meteo · Market data: Yahoo Finance (may be delayed up to 15 min) · Auto-refreshes every 5 minutes
+  </footer>
+
+<script>
+  const DEFAULT_CITIES = {{ default_cities | tojson }};
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const fmt = (n) => Number(n).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+  function loadCities() {
+    try {
+      const saved = JSON.parse(localStorage.getItem("cities"));
+      if (Array.isArray(saved) && saved.length) return saved;
+    } catch (e) {}
+    return [...DEFAULT_CITIES];
+  }
+  function saveCities() { try { localStorage.setItem("cities", JSON.stringify(cities)); } catch (e) {} }
+  let cities = loadCities();
+  let offsets = {};   // city -> utc offset seconds, for live clocks
+
+  /* ---------- Markets ---------- */
+  function sparkline(values, up) {
+    if (!values || values.length < 2) return "";
+    const w = 300, h = 56, pad = 3;
+    const min = Math.min(...values), max = Math.max(...values), range = max - min || 1;
+    const pts = values.map((v, i) => [
+      (i / (values.length - 1)) * w,
+      h - pad - ((v - min) / range) * (h - pad * 2)
+    ]);
+    const line = pts.map(p => p.map(n => n.toFixed(1)).join(",")).join(" ");
+    const color = up ? "var(--up)" : "var(--down)";
+    const id = "g" + Math.random().toString(36).slice(2, 8);
+    return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true">
+      <defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="${color}" stop-opacity=".22"/><stop offset="1" stop-color="${color}" stop-opacity="0"/>
+      </linearGradient></defs>
+      <polygon points="0,${h} ${line} ${w},${h}" fill="url(#${id})"/>
+      <polyline points="${line}" fill="none" stroke="${color}" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>
+    </svg>`;
+  }
+
+  async function loadPrices() {
+    const box = $("prices");
+    try {
+      const data = await (await fetch("/api/prices")).json();
+      box.innerHTML = Object.entries(data).map(([key, p]) => {
+        const accent = key === "gold" ? "accent-gold" : "accent-oil";
+        if (p.error) return `<div class="card ${accent}"><div class="m-label">${esc(p.label)}</div><p class="error">Data unavailable</p></div>`;
+        const up = p.change >= 0;
+        const monthUp = p.history.length > 1 ? p.history.at(-1) >= p.history[0] : up;
+        return `<div class="card ${accent}">
+          <div class="m-head">
+            <div><div class="m-label">${esc(p.label)}</div><div class="m-symbol">${esc(p.symbol)} · ${esc(p.unit)}</div></div>
+            <span class="pill ${up ? "up" : "down"} num">${up ? "▲" : "▼"} ${Math.abs(p.change_pct).toFixed(2)}%</span>
+          </div>
+          <div class="m-price num">$${fmt(p.price)}</div>
+          <div class="m-change num ${up ? "up-t" : "down-t"}">${up ? "+" : "−"}${fmt(Math.abs(p.change))} today</div>
+          ${sparkline(p.history, monthUp)}
+          <div class="m-foot num">
+            <span>Day range ${p.day_low ? fmt(p.day_low) : "–"} – ${p.day_high ? fmt(p.day_high) : "–"}</span>
+            <span>${esc(p.updated)}</span>
+          </div>
+        </div>`;
+      }).join("");
+    } catch (e) {
+      box.innerHTML = `<div class="card error">Could not load market data.</div>`;
+    }
+  }
+
+  /* ---------- Weather ---------- */
+  function cityClock(offset) {
+    const d = new Date(Date.now() + offset * 1000);
+    return d.toLocaleTimeString([], {hour: "2-digit", minute: "2-digit", timeZone: "UTC"});
+  }
+  function cityDate(offset) {
+    const d = new Date(Date.now() + offset * 1000);
+    return d.toLocaleDateString([], {weekday: "short", day: "numeric", month: "short", timeZone: "UTC"});
+  }
+
+  function weatherCard(city, w) {
+    offsets[city] = w.utc_offset;
+    return `<div class="card w-card">
+      <button class="remove" title="Remove" data-city="${esc(city)}">×</button>
+      <div class="w-top">
+        <div><div class="w-city">${esc(w.city)}</div><div class="w-country">${esc(w.country)}</div></div>
+        <div class="w-time"><div class="w-clock num" data-clock="${esc(city)}">${cityClock(w.utc_offset)}</div>
+          <div class="w-tz">${cityDate(w.utc_offset)} · ${esc(w.timezone)}</div></div>
+      </div>
+      <div class="w-main">
+        <div class="w-icon">${w.icon}</div>
+        <div>
+          <div class="w-temp num">${w.temperature}°C</div>
+        </div>
+        <div style="margin-left:auto;text-align:right">
+          <div class="w-desc">${esc(w.description)}</div>
+          <div class="w-hl num">H ${w.high}° · L ${w.low}°</div>
+          <div class="w-hl num">Feels like ${w.feels_like}°</div>
+        </div>
+      </div>
+      <div class="w-stats num">
+        <div class="w-stat"><div class="k">Humidity</div><div class="v">${w.humidity}%</div></div>
+        <div class="w-stat"><div class="k">Wind</div><div class="v">${w.wind} ${esc(w.wind_unit)}</div></div>
+        <div class="w-stat"><div class="k">UV index</div><div class="v">${w.uv_index ?? "–"}</div></div>
+        <div class="w-stat"><div class="k">Pressure</div><div class="v">${w.pressure} hPa</div></div>
+        <div class="w-stat"><div class="k">Sunrise</div><div class="v">${esc(w.sunrise)}</div></div>
+        <div class="w-stat"><div class="k">Sunset</div><div class="v">${esc(w.sunset)}</div></div>
+      </div>
+    </div>`;
+  }
+
+  async function fetchWeather(city) {
+    const res = await fetch(`/api/weather?city=${encodeURIComponent(city)}`);
+    const w = await res.json();
+    if (w.error) throw new Error(w.error);
+    return w;
+  }
+
+  async function loadWeather() {
+    const box = $("weather");
+    if (!box.children.length) {
+      box.innerHTML = cities.map(() => `<div class="card"><div class="skeleton" style="height:220px"></div></div>`).join("");
+    }
+    const results = await Promise.allSettled(cities.map(fetchWeather));
+    box.innerHTML = results.map((r, i) => r.status === "fulfilled"
+      ? weatherCard(cities[i], r.value)
+      : `<div class="card w-card"><button class="remove" title="Remove" data-city="${esc(cities[i])}">×</button>
+           <div class="w-city">${esc(cities[i])}</div><p class="error">${esc(r.reason.message)}</p></div>`
+    ).join("");
+  }
+
+  $("weather").addEventListener("click", (e) => {
+    const btn = e.target.closest(".remove");
+    if (!btn) return;
+    cities = cities.filter(c => c !== btn.dataset.city);
+    saveCities();
+    loadWeather();
+  });
+
+  $("add-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const input = $("city-input");
+    const city = input.value.trim();
+    $("toast").textContent = "";
+    if (!city) return;
+    if (cities.some(c => c.toLowerCase() === city.toLowerCase())) {
+      $("toast").textContent = `${city} is already on the dashboard.`;
+      return;
+    }
+    try {
+      await fetchWeather(city);   // validate before adding
+      cities.push(city);
+      saveCities();
+      input.value = "";
+      loadWeather();
+    } catch (err) {
+      $("toast").textContent = err.message;
+    }
+  });
+
+  /* ---------- Refresh ---------- */
+  async function refresh() {
+    $("refresh-btn").disabled = true;
+    await Promise.all([loadWeather(), loadPrices()]);
+    $("refreshed").textContent = "Updated " + new Date().toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"});
+    $("refresh-btn").disabled = false;
+  }
+  $("refresh-btn").addEventListener("click", refresh);
+
+  // Tick the city clocks every 30s
+  setInterval(() => {
+    document.querySelectorAll("[data-clock]").forEach(el => {
+      const off = offsets[el.dataset.clock];
+      if (off !== undefined) el.textContent = cityClock(off);
+    });
+  }, 30000);
+
+  refresh();
+  setInterval(refresh, 5 * 60 * 1000);
+</script>
+</body>
+</html>
