@@ -8,31 +8,35 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #f5f7fb; --surface: #ffffff; --surface-2: #f0f3f8;
-      --text: #0f172a; --muted: #64748b; --border: #e2e8f0;
-      --brand: #0b3d91; --brand-2: #1d64d8; --brand-text: #ffffff;
-      --up: #059669; --up-bg: #ecfdf5; --down: #dc2626; --down-bg: #fef2f2;
-      --gold: #b8860b; --shadow: 0 1px 2px rgba(15,23,42,.04), 0 4px 16px rgba(15,23,42,.06);
+      --bg: #eaf2fd; --bg-2: #d8e7fb; --surface: #ffffff; --surface-2: #eef5ff;
+      --text: #0c2340; --muted: #4f6b8f; --border: #cfe0f7;
+      --brand: #0a3a8c; --brand-mid: #1565d8; --brand-2: #1e7bf0; --brand-text: #ffffff;
+      --up: #059669; --up-bg: #e6f7f1; --down: #dc2626; --down-bg: #fdeeee;
+      --gold: #b8860b; --shadow: 0 1px 2px rgba(10,58,140,.06), 0 6px 20px rgba(21,101,216,.10);
     }
     @media (prefers-color-scheme: dark) {
       :root {
-        --bg: #0b1120; --surface: #111a2e; --surface-2: #17223a;
-        --text: #e2e8f0; --muted: #94a3b8; --border: #1f2c46;
-        --brand: #0a1730; --brand-2: #60a5fa; --brand-text: #e2e8f0;
-        --up: #34d399; --up-bg: rgba(52,211,153,.12); --down: #f87171; --down-bg: rgba(248,113,113,.12);
-        --gold: #fbbf24; --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.25);
+        --bg: #071530; --bg-2: #0a1f45; --surface: #0e2350; --surface-2: #132c60;
+        --text: #e3edfc; --muted: #9db4d8; --border: #1d3a72;
+        --brand: #061536; --brand-mid: #0c3175; --brand-2: #4c9bff; --brand-text: #e3edfc;
+        --up: #34d399; --up-bg: rgba(52,211,153,.14); --down: #f87171; --down-bg: rgba(248,113,113,.14);
+        --gold: #fbbf24; --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 20px rgba(0,10,40,.35);
       }
     }
     * { box-sizing: border-box; }
     body {
-      margin: 0; background: var(--bg); color: var(--text);
+      margin: 0; min-height: 100vh; color: var(--text);
+      background: var(--bg) linear-gradient(180deg, var(--bg-2) 0%, var(--bg) 420px) no-repeat;
       font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
       font-size: 15px; -webkit-font-smoothing: antialiased;
     }
     .num { font-variant-numeric: tabular-nums; }
 
     /* Top bar */
-    .topbar { background: var(--brand); color: var(--brand-text); border-bottom: 1px solid var(--border); }
+    .topbar {
+      background: linear-gradient(120deg, var(--brand) 0%, var(--brand-mid) 60%, var(--brand-2) 100%);
+      color: var(--brand-text); box-shadow: 0 2px 12px rgba(10,58,140,.25);
+    }
     .topbar-inner {
       max-width: 1180px; margin: 0 auto; padding: 14px 20px;
       display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
@@ -60,7 +64,12 @@
     .card {
       background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
       box-shadow: var(--shadow); padding: 20px;
+      transition: transform .15s, box-shadow .15s, border-color .15s;
     }
+    .card:hover { transform: translateY(-2px); border-color: var(--brand-2); box-shadow: 0 8px 28px rgba(21,101,216,.18); }
+    .section-head h2 { color: var(--brand-mid); }
+    @media (prefers-color-scheme: dark) { .section-head h2 { color: var(--brand-2); } }
+    .w-temp { color: var(--brand-2); }
     .grid { display: grid; gap: 16px; }
     .grid-3 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
     .grid-w { grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
@@ -114,8 +123,9 @@
     .add-form input:focus { outline: 2px solid var(--brand-2); outline-offset: -1px; }
     .add-form button {
       font: inherit; font-size: .88rem; font-weight: 600; padding: 8px 14px; border-radius: 8px;
-      border: none; background: var(--brand-2); color: #fff; cursor: pointer;
+      border: none; background: linear-gradient(120deg, var(--brand-mid), var(--brand-2)); color: #fff; cursor: pointer;
     }
+    .add-form button:hover { filter: brightness(1.1); }
     .error { color: var(--down); font-size: .9rem; }
     .toast { color: var(--down); font-size: .82rem; min-height: 1em; margin-top: -6px; margin-bottom: 8px; }
 
