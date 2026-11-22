@@ -1,0 +1,87 @@
+name: Deploy to VPS
+
+on:
+  workflow_dispatch:
+    inputs:
+      connect_only:
+        description: Verify SSH access without deploying
+        type: boolean
+        default: true
+
+permissions: {}
+
+concurrency:
+  group: weather-prices-vps
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      VPS_HOST: ${{ vars.VPS_HOST }}
+      VPS_PORT: ${{ vars.VPS_PORT || '22' }}
+      VPS_USER: ${{ vars.VPS_USER }}
+      VPS_DEPLOY_DIR: ${{ vars.VPS_DEPLOY_DIR }}
+      VPS_SERVICE: ${{ vars.VPS_SERVICE }}
+      VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+      VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+      CONNECT_ONLY: ${{ inputs.connect_only }}
+      RELEASE_SHA: ${{ github.sha }}
+    steps:
+      - name: Connect to VPS
+        shell: bash
+        run: |
+          set -euo pipefail
+          : "${VPS_HOST:?Set VPS_HOST in Actions variables}"
+          : "${VPS_USER:?Set VPS_USER in Actions variables}"
+          : "${VPS_SSH_KEY:?Set VPS_SSH_KEY in Actions secrets}"
+          : "${VPS_KNOWN_HOSTS:?Set VPS_KNOWN_HOSTS in Actions secrets}"
+
+          umask 077
+          ssh_dir=$(mktemp -d)
+          trap 'rm -rf -- "$ssh_dir"' EXIT
+          printf '%s\n' "$VPS_SSH_KEY" > "$ssh_dir/key"
+          printf '%s\n' "$VPS_KNOWN_HOSTS" > "$ssh_dir/known_hosts"
+          unset VPS_SSH_KEY VPS_KNOWN_HOSTS
+
+          ssh_options=(
+            -p "$VPS_PORT" -l "$VPS_USER" -i "$ssh_dir/key"
+            -o BatchMode=yes -o IdentitiesOnly=yes -o ConnectTimeout=15
+            -o StrictHostKeyChecking=yes -o "UserKnownHostsFile=$ssh_dir/known_hosts"
+          )
+
+          if [[ "$CONNECT_ONLY" == true ]]; then
+            ssh "${ssh_options[@]}" -- "$VPS_HOST" 'printf "SSH connection verified\n"'
+            exit
+          fi
+
+          : "${VPS_DEPLOY_DIR:?Set VPS_DEPLOY_DIR in Actions variables}"
+          : "${VPS_SERVICE:?Set VPS_SERVICE in Actions variables}"
+
+          if [[ ! "$VPS_DEPLOY_DIR" =~ ^/[a-zA-Z0-9_./-]+$ ||
+                ! "$VPS_SERVICE" =~ ^[a-zA-Z0-9_.@-]+\.service$ ||
+                ! "$RELEASE_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo 'Expected an absolute deployment path without spaces, a systemd service name, and a Git SHA.' >&2
+            exit 1
+          fi
+
+          ssh "${ssh_options[@]}" -- "$VPS_HOST" \
+            "bash -s -- '$VPS_DEPLOY_DIR' '$VPS_SERVICE' '$RELEASE_SHA'" <<'REMOTE'
+          set -euo pipefail
+          cd -- "$1"
+          service=$2
+          release_sha=$3
+          test "$(git symbolic-ref --short HEAD)" = main
+          test -z "$(git status --porcelain)"
+          git fetch origin main
+          git merge-base --is-ancestor "$release_sha" FETCH_HEAD
+          git merge-base --is-ancestor HEAD "$release_sha"
+          git merge --ff-only "$release_sha"
+          python3 -m venv .venv
+          .venv/bin/python -m pip --disable-pip-version-check --no-input install -r requirements.txt
+          .venv/bin/python -m pip check
+          sudo -n systemctl restart -- "$service"
+          systemctl is-active --quiet -- "$service"
+          REMOTE
